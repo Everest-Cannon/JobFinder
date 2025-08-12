@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobFinder - Employment Opportunities</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-dark': '#4B4BC8'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .loading {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 min-h-screen">
+    <!-- Dark mode detection -->
+    <script>
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+    </script>
+
+    <div class="container mx-auto px-4 py-6 max-w-4xl">
+        <!-- Language Selection Screen -->
+        <div id="languageScreen" class="text-center">
+            <div class="mb-8">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4">
+                    🌍 Choose Your Language / 選擇語言 / Choisir la langue
+                </h1>
+                <p class="text-gray-600 dark:text-gray-300">
+                    Select your preferred language to continue
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                <button onclick="setLanguage('en')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇺🇸 English
+                </button>
+                <button onclick="setLanguage('es')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇪🇸 Español
+                </button>
+                <button onclick="setLanguage('fr')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇫🇷 Français
+                </button>
+                <button onclick="setLanguage('zh-cn')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇨🇳 中文 (简体)
+                </button>
+                <button onclick="setLanguage('zh-hk')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇭🇰 粵語 (繁體)
+                </button>
+                <button onclick="setLanguage('fil')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇵🇭 Filipino
+                </button>
+                <button onclick="setLanguage('id')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇮🇩 Bahasa Indonesia
+                </button>
+                <button onclick="setLanguage('nl')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇳🇱 Nederlands
+                </button>
+                <button onclick="setLanguage('de')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇩🇪 Deutsch
+                </button>
+                <button onclick="setLanguage('pt')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇵🇹 Português
+                </button>
+                <button onclick="setLanguage('ar')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇸🇦 العربية
+                </button>
+                <button onclick="setLanguage('hi')" class="p-4 bg-primary hover:bg-primary-dark text-white rounded-lg transition-colors">
+                    🇮🇳 हिन्दी
+                </button>
+            </div>
+        </div>
+
+        <!-- Main App Screen -->
+        <div id="mainScreen" class="hidden">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <button onclick="showLanguageScreen()" class="text-sm text-primary hover:text-primary-dark">
+                        🌍 <span data-translate="change_language">Change Language</span>
+                    </button>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
+                        💼 <span data-translate="app_title">JobFinder</span>
+                    </h1>
+                    <div class="w-20"></div>
+                </div>
+                <p class="text-gray-600 dark:text-gray-300" data-translate="app_subtitle">
+                    Find employment opportunities that match your needs
+                </p>
+            </div>
+
+            <!-- Job Search Form -->
+            <div id="jobForm" class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4" data-translate="tell_us_about_you">
+                    Tell us about yourself
+                </h2>
+
+                <div class="space-y-4">
+                    <!-- Location -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-translate="location">
+                            Your Location (City, State/Province, Country)
+                        </label>
+                        <input type="text" id="location" placeholder="e.g., Hong Kong, China" 
+                               class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <!-- Age -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-translate="age">
+                            Your Age
+                        </label>
+                        <input type="number" id="age" min="16" max="80" 
+                               class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <!-- Experience Level -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-translate="experience">
+                            Work Experience
+                        </label>
+                        <select id="experience" 
+                                class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+                            <option value="" data-translate="select_experience">Select your experience level</option>
+                            <option value="no_experience" data-translate="no_experience">No previous work experience</option>
+                            <option value="some_experience" data-translate="some_experience">Some work experience (1-3 years)</option>
+                            <option value="experienced" data-translate="experienced">Experienced (3+ years)</option>
+                        </select>
+                    </div>
+
+                    <!-- Skills/Previous Jobs -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-translate="skills">
+                            Skills or Previous Jobs (Optional)
+                        </label>
+                        <textarea id="skills" rows="3" placeholder="e.g., retail, construction, cleaning, food service, customer service..."
+                                  class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white"></textarea>
+                    </div>
+
+                    <!-- Desired Salary -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-translate="salary">
+                            Desired Salary (per hour or month)
+                        </label>
+                        <input type="text" id="salary" placeholder="e.g., $15/hour, $3000/month" 
+                               class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <!-- Work Duration -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-translate="duration">
+                            Preferred Work Duration
+                        </label>
+                        <select id="duration" 
+                                class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+                            <option value="" data-translate="select_duration">Select preferred duration</option>
+                            <option value="temporary" data-translate="temporary">Temporary/Short-term (weeks to months)</option>
+                            <option value="permanent" data-translate="permanent">Permanent/Long-term</option>
+                            <option value="flexible" data-translate="flexible">Flexible/Open to both</option>
+                        </select>
+                    </div>
+
+                    <!-- Work Schedule -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2" data-translate="schedule">
+                            Preferred Work Schedule
+                        </label>
+                        <select id="schedule" 
+                                class="w-full px-4 py-3 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-gray-700 dark:text-white">
+                            <option value="" data-translate="select_schedule">Select preferred schedule</option>
+                            <option value="full_time" data-translate="full_time">Full-time</option>
+                            <option value="part_time" data-translate="part_time">Part-time</option>
+                            <option value="flexible_hours" data-translate="flexible_hours">Flexible hours</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="findJobs()" id="findJobsBtn"
+                        class="w-full mt-6 bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                    <span data-translate="find_jobs">🔍 Find Jobs for Me</span>
+                </button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="hidden text-center py-8">
+                <div class="loading bg-primary rounded-full w-16 h-16 mx-auto mb-4"></div>
+                <p class="text-gray-600 dark:text-gray-300" data-translate="searching">
+                    Searching for job opportunities...
+                </p>
+            </div>
+
+            <!-- Job Results -->
+            <div id="jobResults" class="hidden space-y-4">
+                <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4" data-translate="available_jobs">
+                    Available Job Opportunities
+                </h2>
+                <div id="jobsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLanguage = 'en';
+        let jobData = [];
+
+        // Translations
+        const translations = {
+            en: {
+                change_language: "Change Language",
+                app_title: "JobFinder",
+                app_subtitle: "Find employment opportunities that match your needs",
+                tell_us_about_you: "Tell us about yourself",
+                location: "Your Location (City, State/Province, Country)",
+                age: "Your Age",
+                experience: "Work Experience",
+                select_experience: "Select your experience level",
+                no_experience: "No previous work experience",
+                some_experience: "Some work experience (1-3 years)",
+                experienced: "Experienced (3+ years)",
+                skills: "Skills or Previous Jobs (Optional)",
+                salary: "Desired Salary (per hour or month)",
+                duration: "Preferred Work Duration",
+                select_duration: "Select preferred duration",
+                temporary: "Temporary/Short-term (weeks to months)",
+                permanent: "Permanent/Long-term",
+                flexible: "Flexible/Open to both",
+                schedule: "Preferred Work Schedule",
+                select_schedule: "Select preferred schedule",
+                full_time: "Full-time",
+                part_time: "Part-time",
+                flexible_hours: "Flexible hours",
+                find_jobs: "🔍 Find Jobs for Me",
+                searching: "Searching for job opportunities...",
+                available_jobs: "Available Job Opportunities",
+                get_directions: "🗺️ Get Directions"
+            },
+            es: {
+                change_language: "Cambiar Idioma",
+                app_title: "BuscadorEmpleo",
+                app_subtitle: "Encuentra oportunidades de empleo que se adapten a tus necesidades",
+                tell_us_about_you: "Cuéntanos sobre ti",
+                location: "Tu Ubicación (Ciudad, Estado/Provincia, País)",
+                age: "Tu Edad",
+                experience: "Experiencia Laboral",
+                select_experience: "Selecciona tu nivel de experiencia",
+                no_experience: "Sin experiencia laboral previa",
+                some_experience: "Algo de experiencia laboral (1-3 años)",
+                experienced: "Experimentado (3+ años)",
+                skills: "Habilidades o Trabajos Anteriores (Opcional)",
+                salary: "Salario Deseado (por hora o mes)",
+                duration: "Duración de Trabajo Preferida",
+                select_duration: "Selecciona duración preferida",
+                temporary: "Temporal/Corto plazo (semanas a meses)",
+                permanent: "Permanente/Largo plazo",
+                flexible: "Flexible/Abierto a ambos",
+                schedule: "Horario de Trabajo Preferido",
+                select_schedule: "Selecciona horario preferido",
+                full_time: "Tiempo completo",
+                part_time: "Tiempo parcial",
+                flexible_hours: "Horarios flexibles",
+                find_jobs: "🔍 Buscar Trabajos para Mí",
+                searching: "Buscando oportunidades de empleo...",
+                available_jobs: "Oportunidades de Empleo Disponibles",
+                get_directions: "🗺️ Obtener Direcciones"
+            },
+            fr: {
+                change_language: "Changer de Langue",
+                app_title: "ChercheurEmploi",
+                app_subtitle: "Trouvez des opportunités d'emploi qui correspondent à vos besoins",
+                tell_us_about_you: "Parlez-nous de vous",
+                location: "Votre Emplacement (Ville, État/Province, Pays)",
+                age: "Votre Âge",
+                experience: "Expérience Professionnelle",
+                select_experience: "Sélectionnez votre niveau d'expérience",
+                no_experience: "Aucune expérience professionnelle précédente",
+                some_experience: "Quelque expérience professionnelle (1-3 ans)",
+                experienced: "Expérimenté (3+ ans)",
+                skills: "Compétences ou Emplois Précédents (Optionnel)",
+                salary: "Salaire Souhaité (par heure ou mois)",
+                duration: "Durée de Travail Préférée",
+                select_duration: "Sélectionnez la durée préférée",
+                temporary: "Temporaire/Court terme (semaines à mois)",
+                permanent: "Permanent/Long terme",
+                flexible: "Flexible/Ouvert aux deux",
+                schedule: "Horaire de Travail Préféré",
+                select_schedule: "Sélectionnez l'horaire préféré",
+                full_time: "Temps plein",
+                part_time: "Temps partiel",
+                flexible_hours: "Horaires flexibles",
+                find_jobs: "🔍 Trouver des Emplois pour Moi",
+                searching: "Recherche d'opportunités d'emploi...",
+                available_jobs: "Opportunités d'Emploi Disponibles",
+                get_directions: "🗺️ Obtenir Directions"
+            },
+            'zh-cn': {
+                change_language: "更改语言",
+                app_title: "求职助手",
+                app_subtitle: "找到符合您需求的就业机会",
+                tell_us_about_you: "告诉我们关于您的情况",
+                location: "您的位置（城市，省份/州，国家）",
+                age: "您的年龄",
+                experience: "工作经验",
+                select_experience: "选择您的经验水平",
+                no_experience: "无工作经验",
+                some_experience: "有一些工作经验（1-3年）",
+                experienced: "有经验（3年以上）",
+                skills: "技能或以前的工作（可选）",
+                salary: "期望薪资（每小时或每月）",
+                duration: "首选工作时长",
+                select_duration: "选择首选时长",
+                temporary: "临时/短期（几周到几个月）",
+                permanent: "永久/长期",
+                flexible: "灵活/两者皆可",
+                schedule: "首选工作时间",
+                select_schedule: "选择首选时间安排",
+                full_time: "全职",
+                part_time: "兼职",
+                flexible_hours: "灵活时间",
+                find_jobs: "🔍 为我找工作",
+                searching: "正在搜索工作机会...",
+                available_jobs: "可用工作机会",
+                get_directions: "🗺️ 获取路线"
+            },
+            'zh-hk': {
+                change_language: "更改語言",
+                app_title: "搵工助手",
+                app_subtitle: "搵到符合您需要嘅就業機會",
+                tell_us_about_you: "話俾我哋知您嘅情況",
+                location: "您嘅位置（城市，省份/州，國家）",
+                age: "您嘅年齡",
+                experience: "工作經驗",
+                select_experience: "選擇您嘅經驗水平",
+                no_experience: "冇工作經驗",
+                some_experience: "有啲工作經驗（1-3年）",
+                experienced: "有經驗（3年以上）",
+                skills: "技能或以前嘅工作（可選）",
+                salary: "期望薪金（每小時或每月）",
+                duration: "首選工作時長",
+                select_duration: "選擇首選時長",
+                temporary: "臨時/短期（幾週到幾個月）",
+                permanent: "永久/長期",
+                flexible: "靈活/兩者皆可",
+                schedule: "首選工作時間",
+                select_schedule: "選擇首選時間安排",
+                full_time: "全職",
+                part_time: "兼職",
+                flexible_hours: "靈活時間",
+                find_jobs: "🔍 幫我搵工",
+                searching: "正在搜索工作機會...",
+                available_jobs: "可用工作機會",
+                get_directions: "🗺️ 獲取路線"
+            }
+        };
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            updateTranslations();
+            document.getElementById('languageScreen').classList.add('hidden');
+            document.getElementById('mainScreen').classList.remove('hidden');
+            document.getElementById('mainScreen').classList.add('fade-in');
+        }
+
+        function showLanguageScreen() {
+            document.getElementById('mainScreen').classList.add('hidden');
+            document.getElementById('languageScreen').classList.remove('hidden');
+        }
+
+        function updateTranslations() {
+            const langData = translations[currentLanguage] || translations.en;
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (langData[key]) {
+                    element.textContent = langData[key];
+                }
+            });
+
+            // Update placeholders
+            const locationInput = document.getElementById('location');
+            if (currentLanguage === 'zh-cn') {
+                locationInput.placeholder = '例如：香港，中国';
+            } else if (currentLanguage === 'zh-hk') {
+                locationInput.placeholder = '例如：香港，中國';
+            } else if (currentLanguage === 'es') {
+                locationInput.placeholder = 'ej., Madrid, España';
+            } else if (currentLanguage === 'fr') {
+                locationInput.placeholder = 'ex., Paris, France';
+            } else {
+                locationInput.placeholder = 'e.g., Hong Kong, China';
+            }
+        }
+
+        // Jooble API key - Get your free key by requesting at https://jooble.org/api/about
+        const JOOBLE_API_KEY = 'f985290b-50db-4c8c-8cc1-14f365cb44be'; // Replace with your actual key
+
+        function findJobs() {
+            const location = document.getElementById('location').value.trim();
+            const age = document.getElementById('age').value;
+            const experience = document.getElementById('experience').value;
+            const skills = document.getElementById('skills').value.trim();
+            const salary = document.getElementById('salary').value.trim();
+            const duration = document.getElementById('duration').value;
+            const schedule = document.getElementById('schedule').value;
+
+            if (!location) {
+                showAlert('Please enter your location.');
+                return;
+            }
+
+            if (!age) {
+                showAlert('Please enter your age.');
+                return;
+            }
+
+            if (!experience) {
+                showAlert('Please select your experience level.');
+                return;
+            }
+
+            if (JOOBLE_API_KEY === 'your_jooble_api_key_here') {
+                showAlert('Please set your Jooble API key in the script to fetch real jobs.');
+                return;
+            }
+
+            // Show loading state
+            document.getElementById('jobResults').classList.add('hidden');
+            document.getElementById('loadingState').classList.remove('hidden');
+
+            // Construct keywords
+            let keywords = skills || '';
+            if (experience === 'no_experience') {
+                keywords += ' no experience entry level';
+            } else if (experience === 'some_experience') {
+                keywords += ' 1-3 years experience';
+            } else if (experience === 'experienced') {
+                keywords += ' 3+ years experience';
+            }
+
+            if (schedule) {
+                keywords += ' ' + schedule.replace('_', ' ');
+            }
+
+            if (duration && duration !== 'flexible') {
+                keywords += ' ' + duration;
+            }
+
+            if (salary) {
+                keywords += ' ' + salary;
+            }
+
+            keywords = keywords.trim() || 'entry level';
+
+            const requestBody = {
+                "keywords": keywords,
+                "location": location,
+                "radius": "40", // 40km radius
+                "page": "1",
+                "resultonpage": "8"
+            };
+
+            fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('API request failed: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loadingState').classList.add('hidden');
+                const formattedJobs = {
+                    jobs: data.jobs.map(job => ({
+                        title: job.title,
+                        company: job.company,
+                        location: job.location,
+                        salary: job.salary || 'Not specified',
+                        type: job.type || 'Full-time',
+                        description: job.snippet,
+                        requirements: 'See full description for details',
+                        contact: `Apply at ${job.link}`
+                    }))
+                };
+                displayJobResults(JSON.stringify(formattedJobs));
+            })
+            .catch(error => {
+                document.getElementById('loadingState').classList.add('hidden');
+                showError('Error fetching jobs: ' + error.message + '. If CORS issue, try using a CORS proxy or browser extension.');
+            });
+        }
+
+        function displayJobResults(responseText) {
+            try {
+                const data = JSON.parse(responseText);
+                console.log(data)
+                if (!data.jobs || !Array.isArray(data.jobs)) {
+                    throw new Error("Invalid response format");
+                }
+
+                jobData = data.jobs;
+                const jobsList = document.getElementById('jobsList');
+                jobsList.innerHTML = '';
+
+                if (data.jobs.length === 0) {
+                    showError("No jobs found matching your criteria. Try broadening your search.");
+                    return;
+                }
+
+                data.jobs.forEach((job, index) => {
+                    const jobCard = document.createElement('div');
+                    jobCard.className = 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow';
+                    
+                    jobCard.innerHTML = `
+                        <div class="flex flex-col space-y-3">
+                            <div class="flex justify-between items-start">
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">${job.title}</h3>
+                                <span class="text-sm bg-primary text-white px-2 py-1 rounded">${job.type}</span>
+                            </div>
+                            
+                            <div class="text-gray-600 dark:text-gray-300">
+                                <p class="font-medium">${job.company}</p>
+                                <p class="text-sm">${job.location}</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <span class="font-medium text-gray-700 dark:text-gray-300">Salary:</span>
+                                    <span class="text-green-600 dark:text-green-400">${job.salary}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-sm text-gray-600 dark:text-gray-300">
+                                <p><span class="font-medium">Description:</span> ${job.description}</p>
+                                <p><span class="font-medium">Requirements:</span> ${job.requirements}</p>
+                                <p><span class="font-medium">How to Apply:</span> ${job.contact}</p>
+                            </div>
+                            
+                            <div class="pt-3 border-t border-gray-200 dark:border-gray-600">
+                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                                    <span class="font-medium">Company Address:</span> ${job.location}
+                                </p>
+                                <button onclick="openGoogleMaps('${encodeURIComponent(job.location)}', '${encodeURIComponent(job.company)}')" 
+                                        class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors">
+                                    <span data-translate="get_directions">🗺️ Get Directions</span>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    jobsList.appendChild(jobCard);
+                });
+
+                document.getElementById('jobResults').classList.remove('hidden');
+                document.getElementById('jobResults').classList.add('fade-in');
+
+                // Update button translations
+                updateTranslations();
+
+            } catch (error) {
+                console.error('Error parsing job results:', error);
+                showError("Error processing job results. Please try again.");
+            }
+        }
+
+        function openGoogleMaps(address, companyName) {
+            const query = encodeURIComponent(`${companyName} ${address}`);
+            const url = `https://www.google.com/maps/search/${query}`;
+            window.open(url, '_blank');
+        }
+
+        function showAlert(message) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-sm w-full">
+                    <p class="text-gray-700 dark:text-gray-300 mb-4">${message}</p>
+                    <div class="flex justify-end">
+                        <button class="px-4 py-2 bg-primary text-white hover:bg-primary-dark rounded transition-colors" 
+                                onclick="this.closest('.fixed').remove()">OK</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4';
+            errorDiv.innerHTML = `
+                <strong>Error:</strong> ${message}
+            `;
+            document.getElementById('jobResults').innerHTML = '';
+            document.getElementById('jobResults').appendChild(errorDiv);
+            document.getElementById('jobResults').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
