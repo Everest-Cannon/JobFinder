@@ -416,8 +416,61 @@
             }
         }
 
-        // Jooble API key - Get your free key by requesting at https://jooble.org/api/about
-        const JOOBLE_API_KEY = 'f985290b-50db-4c8c-8cc1-14f365cb44be'; // Replace with your actual key
+        // Mock job data for local testing
+        const mockJobs = {
+            jobs: [
+                {
+                    title: "Retail Associate",
+                    company: "CityMart",
+                    location: "123 Main St, Hong Kong, China",
+                    salary: "$15/hour",
+                    type: "Part-time",
+                    description: "Assist customers, manage inventory, and maintain store cleanliness.",
+                    requirements: "No experience required, good communication skills.",
+                    contact: "Apply in-store or email hr@citymart.com"
+                },
+                {
+                    title: "Warehouse Worker",
+                    company: "QuickLogistics",
+                    location: "456 Industrial Rd, Hong Kong, China",
+                    salary: "$3000/month",
+                    type: "Full-time",
+                    description: "Handle package sorting and inventory management.",
+                    requirements: "Basic physical fitness, ability to lift 20kg.",
+                    contact: "Submit application at quicklogistics.com/careers"
+                },
+                {
+                    title: "Food Service Worker",
+                    company: "TastyBites Cafe",
+                    location: "789 Food St, Hong Kong, China",
+                    salary: "$14/hour",
+                    type: "Part-time",
+                    description: "Prepare and serve food, maintain clean dining area.",
+                    requirements: "Food safety knowledge, customer service skills.",
+                    contact: "Email resume to jobs@tastybites.com"
+                },
+                {
+                    title: "Delivery Driver",
+                    company: "FastDeliver",
+                    location: "321 Delivery Rd, Hong Kong, China",
+                    salary: "$16/hour",
+                    type: "Flexible hours",
+                    description: "Deliver packages to customers in the local area.",
+                    requirements: "Valid driver's license, good driving record.",
+                    contact: "Apply online at fastdeliver.com/join"
+                },
+                {
+                    title: "Cleaning Staff",
+                    company: "CleanCo Services",
+                    location: "654 Clean St, Hong Kong, China",
+                    salary: "$13/hour",
+                    type: "Part-time",
+                    description: "Perform cleaning duties in office buildings.",
+                    requirements: "Attention to detail, reliability.",
+                    contact: "Call 123-456-7890 to schedule interview"
+                }
+            ]
+        };
 
         function findJobs() {
             const location = document.getElementById('location').value.trim();
@@ -443,86 +496,31 @@
                 return;
             }
 
-            if (JOOBLE_API_KEY === 'your_jooble_api_key_here') {
-                showAlert('Please set your Jooble API key in the script to fetch real jobs.');
-                return;
-            }
-
             // Show loading state
             document.getElementById('jobResults').classList.add('hidden');
             document.getElementById('loadingState').classList.remove('hidden');
 
-            // Construct keywords
-            let keywords = skills || '';
-            if (experience === 'no_experience') {
-                keywords += ' no experience entry level';
-            } else if (experience === 'some_experience') {
-                keywords += ' 1-3 years experience';
-            } else if (experience === 'experienced') {
-                keywords += ' 3+ years experience';
-            }
-
-            if (schedule) {
-                keywords += ' ' + schedule.replace('_', ' ');
-            }
-
-            if (duration && duration !== 'flexible') {
-                keywords += ' ' + duration;
-            }
-
-            if (salary) {
-                keywords += ' ' + salary;
-            }
-
-            keywords = keywords.trim() || 'entry level';
-
-            const requestBody = {
-                "keywords": keywords,
-                "location": location,
-                "radius": "40", // 40km radius
-                "page": "1",
-                "resultonpage": "8"
-            };
-
-            fetch(`https://jooble.org/api/${JOOBLE_API_KEY}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('API request failed: ' + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
+            // Simulate job search with delay
+            setTimeout(() => {
                 document.getElementById('loadingState').classList.add('hidden');
-                const formattedJobs = {
-                    jobs: data.jobs.map(job => ({
-                        title: job.title,
-                        company: job.company,
-                        location: job.location,
-                        salary: job.salary || 'Not specified',
-                        type: job.type || 'Full-time',
-                        description: job.snippet,
-                        requirements: 'See full description for details',
-                        contact: `Apply at ${job.link}`
-                    }))
+                
+                // Filter mock jobs based on user input
+                const filteredJobs = {
+                    jobs: mockJobs.jobs.filter(job => {
+                        // Basic filtering based on location and schedule
+                        const locationMatch = job.location.toLowerCase().includes(location.toLowerCase());
+                        const scheduleMatch = !schedule || job.type.toLowerCase().includes(schedule.replace('_', '-'));
+                        return locationMatch && scheduleMatch;
+                    })
                 };
-                displayJobResults(JSON.stringify(formattedJobs));
-            })
-            .catch(error => {
-                document.getElementById('loadingState').classList.add('hidden');
-                showError('Error fetching jobs: ' + error.message + '. If CORS issue, try using a CORS proxy or browser extension.');
-            });
+
+                displayJobResults(JSON.stringify(filteredJobs));
+            }, 1500);
         }
 
         function displayJobResults(responseText) {
             try {
                 const data = JSON.parse(responseText);
-                console.log(data)
                 if (!data.jobs || !Array.isArray(data.jobs)) {
                     throw new Error("Invalid response format");
                 }
